@@ -64,13 +64,13 @@ class TrainValidationSplitIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsM
         tvsModel = tvs.fit(dataset)
         lrModel = tvsModel.bestModel
 
-        lrModelPath = temp_path + "/lrModel"
+        lrModelPath = f"{temp_path}/lrModel"
         lrModel.save(lrModelPath)
         loadedLrModel = LogisticRegressionModelCls.load(lrModelPath)
         self.assertEqual(loadedLrModel.uid, lrModel.uid)
         self.assertEqual(loadedLrModel.intercept, lrModel.intercept)
 
-        tvsModelPath = temp_path + "/tvsModel"
+        tvsModelPath = f"{temp_path}/tvsModel"
         tvsModel.save(tvsModelPath)
         loadedTvsModel = TrainValidationSplitModel.load(tvsModelPath)
         for param in [
@@ -108,14 +108,14 @@ class TrainValidationSplitIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsM
         tvs = TrainValidationSplit(estimator=lr, estimatorParamMaps=grid, evaluator=evaluator)
         tvsModel = tvs.fit(dataset)
 
-        tvsPath = temp_path + "/tvs"
+        tvsPath = f"{temp_path}/tvs"
         tvs.save(tvsPath)
         loadedTvs = TrainValidationSplit.load(tvsPath)
         self.assertEqual(loadedTvs.getEstimator().uid, tvs.getEstimator().uid)
         self.assertEqual(loadedTvs.getEvaluator().uid, tvs.getEvaluator().uid)
         self.assert_param_maps_equal(loadedTvs.getEstimatorParamMaps(), tvs.getEstimatorParamMaps())
 
-        tvsModelPath = temp_path + "/tvsModel"
+        tvsModelPath = f"{temp_path}/tvsModel"
         tvsModel.save(tvsModelPath)
         loadedModel = TrainValidationSplitModel.load(tvsModelPath)
         self.assertEqual(loadedModel.bestModel.uid, tvsModel.bestModel.uid)

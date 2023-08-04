@@ -21,6 +21,7 @@ An interactive shell.
 This file is designed to be launched as a PYTHONSTARTUP script.
 """
 
+
 import atexit
 import builtins
 import os
@@ -36,10 +37,6 @@ from pyspark.sql.utils import is_remote
 from urllib.parse import urlparse
 
 if getattr(builtins, "__IPYTHON__", False):
-    # (Only) during PYTHONSTARTUP execution, IPython temporarily adds the parent
-    # directory of the script into the Python path, which results in searching
-    # packages under `pyspark` directory.
-    # For example, `import pandas` attempts to import `pyspark.pandas`, see also SPARK-42266.
     if "__file__" in globals():
         parent_dir = os.path.abspath(os.path.dirname(__file__))
         if parent_dir in sys.path:
@@ -96,20 +93,20 @@ print(
     % version
 )
 print(
-    "Using Python version %s (%s, %s)"
-    % (platform.python_version(), platform.python_build()[0], platform.python_build()[1])
+    f"Using Python version {platform.python_version()} ({platform.python_build()[0]}, {platform.python_build()[1]})"
 )
 if is_remote():
     url = os.environ.get("SPARK_REMOTE", None)
     assert url is not None
     if url.startswith("local"):
         url = "sc://localhost"  # only for display in the console.
-    print("Client connected to the Spark Connect server at %s" % urlparse(url).netloc)
-else:
-    print("Spark context Web UI available at %s" % (sc.uiWebUrl))  # type: ignore[union-attr]
     print(
-        "Spark context available as 'sc' (master = %s, app id = %s)."
-        % (sc.master, sc.applicationId)  # type: ignore[union-attr]
+        f"Client connected to the Spark Connect server at {urlparse(url).netloc}"
+    )
+else:
+    print(f"Spark context Web UI available at {sc.uiWebUrl}")
+    print(
+        f"Spark context available as 'sc' (master = {sc.master}, app id = {sc.applicationId})."
     )
 
 print("SparkSession available as 'spark'.")

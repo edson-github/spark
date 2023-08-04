@@ -74,7 +74,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
             estimatorParamMaps=paramGrid,
             evaluator=MulticlassClassificationEvaluator(),
         )
-        tvsPath = temp_path + "/tvs"
+        tvsPath = f"{temp_path}/tvs"
         tvs.save(tvsPath)
         loadedTvs = TrainValidationSplit.load(tvsPath)
         self.assert_param_maps_equal(loadedTvs.getEstimatorParamMaps(), paramGrid)
@@ -84,7 +84,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
         tvsModel = tvs.fit(training)
 
         # test save/load of CrossValidatorModel
-        tvsModelPath = temp_path + "/tvsModel"
+        tvsModelPath = f"{temp_path}/tvsModel"
         tvsModel.save(tvsModelPath)
         loadedModel = TrainValidationSplitModel.load(tvsModelPath)
         self.assertEqual(loadedModel.bestModel.uid, tvsModel.bestModel.uid)
@@ -101,7 +101,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
             estimatorParamMaps=paramGrid,
             evaluator=MulticlassClassificationEvaluator(),
         )
-        tvs2Path = temp_path + "/tvs2"
+        tvs2Path = f"{temp_path}/tvs2"
         tvs2.save(tvs2Path)
         loadedTvs2 = TrainValidationSplit.load(tvs2Path)
         self.assert_param_maps_equal(loadedTvs2.getEstimatorParamMaps(), paramGrid)
@@ -110,7 +110,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
         # Run train validation split, and choose the best set of parameters.
         tvsModel2 = tvs2.fit(training)
         # test save/load of CrossValidatorModel
-        tvsModelPath2 = temp_path + "/tvsModel2"
+        tvsModelPath2 = f"{temp_path}/tvsModel2"
         tvsModel2.save(tvsModelPath2)
         loadedModel2 = TrainValidationSplitModel.load(tvsModelPath2)
         self.assertEqual(loadedModel2.bestModel.uid, tvsModel2.bestModel.uid)

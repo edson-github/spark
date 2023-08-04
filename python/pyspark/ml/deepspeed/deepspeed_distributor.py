@@ -105,10 +105,7 @@ class DeepspeedTorchDistributor(TorchDistributor):
                 json.dump(deepspeed_config, file)
                 return file.name
         deepspeed_config_path = deepspeed_config
-        # Empty value means the deepspeed will fall back to default settings.
-        if deepspeed_config is None:
-            return ""
-        return deepspeed_config_path
+        return "" if deepspeed_config_path is None else deepspeed_config_path
 
     @staticmethod
     def _create_torchrun_command(

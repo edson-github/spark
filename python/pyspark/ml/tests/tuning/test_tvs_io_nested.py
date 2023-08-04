@@ -57,7 +57,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
 
         tvs = TrainValidationSplit(estimator=ova, estimatorParamMaps=grid, evaluator=evaluator)
         tvsModel = tvs.fit(dataset)
-        tvsPath = temp_path + "/tvs"
+        tvsPath = f"{temp_path}/tvs"
         tvs.save(tvsPath)
         loadedTvs = TrainValidationSplit.load(tvsPath)
         self.assert_param_maps_equal(loadedTvs.getEstimatorParamMaps(), grid)
@@ -73,7 +73,7 @@ class TrainValidationSplitIONestedTests(SparkSessionTestCase, ValidatorTestUtils
                 else:
                     self.assertEqual(param[p], originalParamMap[i][p])
 
-        tvsModelPath = temp_path + "/tvsModel"
+        tvsModelPath = f"{temp_path}/tvsModel"
         tvsModel.save(tvsModelPath)
         loadedModel = TrainValidationSplitModel.load(tvsModelPath)
         self.assert_param_maps_equal(loadedModel.getEstimatorParamMaps(), grid)

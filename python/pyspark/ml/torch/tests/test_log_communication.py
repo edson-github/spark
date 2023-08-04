@@ -101,7 +101,7 @@ class LogStreamingServiceTestCase(unittest.TestCase):
         client = LogStreamingClient("localhost", server.port)
         client.send("msg 001")
         server.shutdown()
-        for i in range(5):
+        for _ in range(5):
             client.send("msg 002")
             time.sleep(_SERVER_POLL_INTERVAL + 1)
         self.assertTrue(client.failed)

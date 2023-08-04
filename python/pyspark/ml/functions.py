@@ -179,11 +179,11 @@ def _is_tensor_col(data: Union[pd.Series, pd.DataFrame]) -> bool:
         return data.dtype == np.object_ and isinstance(data.iloc[0], (np.ndarray, list))
     elif isinstance(data, pd.DataFrame):
         return any(data.dtypes == np.object_) and any(
-            [isinstance(d, (np.ndarray, list)) for d in data.iloc[0]]
+            isinstance(d, (np.ndarray, list)) for d in data.iloc[0]
         )
     else:
         raise ValueError(
-            "Unexpected data type: {}, expected pd.Series or pd.DataFrame.".format(type(data))
+            f"Unexpected data type: {type(data)}, expected pd.Series or pd.DataFrame."
         )
 
 
@@ -200,18 +200,17 @@ def _validate_and_transform_multiple_inputs(
 ) -> List[np.ndarray]:
     multi_inputs = [batch[col].to_numpy() for col in batch.columns]
     if input_shapes:
-        if len(input_shapes) == num_input_cols:
-            multi_inputs = [
-                np.vstack(v).reshape([-1] + input_shapes[i])  # type: ignore
-                if input_shapes[i]
-                else v
-                for i, v in enumerate(multi_inputs)
-            ]
-            if not all([len(x) == len(batch) for x in multi_inputs]):
-                raise ValueError("Input data does not match expected shape.")
-        else:
+        if len(input_shapes) != num_input_cols:
             raise ValueError("input_tensor_shapes must match columns")
 
+        multi_inputs = [
+            np.vstack(v).reshape([-1] + input_shapes[i])  # type: ignore
+            if input_shapes[i]
+            else v
+            for i, v in enumerate(multi_inputs)
+        ]
+        if any(len(x) != len(batch) for x in multi_inputs):
+            raise ValueError("Input data does not match expected shape.")
     return multi_inputs
 
 
@@ -222,44 +221,33 @@ def _validate_and_transform_single_input(
     has_tuple: bool,
 ) -> np.ndarray:
     # multiple input columns for single expected input
-    if has_tensors:
-        # tensor columns
-        if len(batch.columns) == 1:
-            # one tensor column and one expected input, vstack rows
-            single_input = np.vstack(batch.iloc[:, 0])
-        else:
-            raise ValueError(
-                "Multiple input columns found, but model expected a single "
-                "input, use `array` to combine columns into tensors."
-            )
+    if has_tensors and len(batch.columns) == 1:
+        # one tensor column and one expected input, vstack rows
+        single_input = np.vstack(batch.iloc[:, 0])
+    elif has_tensors or len(batch.columns) != 1 and has_tuple:
+        raise ValueError(
+            "Multiple input columns found, but model expected a single "
+            "input, use `array` to combine columns into tensors."
+        )
+    elif len(batch.columns) == 1:
+        # single scalar column, remove extra dim
+        np_batch = batch.to_numpy()
+        single_input = np.squeeze(np_batch, -1) if len(np_batch.shape) > 1 else np_batch
+        if input_shapes and input_shapes[0] not in [None, [], [1]]:
+            raise ValueError("Invalid input_tensor_shape for scalar column.")
     else:
-        # scalar columns
-        if len(batch.columns) == 1:
-            # single scalar column, remove extra dim
-            np_batch = batch.to_numpy()
-            single_input = np.squeeze(np_batch, -1) if len(np_batch.shape) > 1 else np_batch
-            if input_shapes and input_shapes[0] not in [None, [], [1]]:
-                raise ValueError("Invalid input_tensor_shape for scalar column.")
-        elif not has_tuple:
-            # columns grouped via `array`, convert to single tensor
-            single_input = batch.to_numpy()
-            if input_shapes and input_shapes[0] != [len(batch.columns)]:
-                raise ValueError("Input data does not match expected shape.")
-        else:
-            raise ValueError(
-                "Multiple input columns found, but model expected a single "
-                "input, use `array` to combine columns into tensors."
-            )
-
+        # columns grouped via `array`, convert to single tensor
+        single_input = batch.to_numpy()
+        if input_shapes and input_shapes[0] != [len(batch.columns)]:
+            raise ValueError("Input data does not match expected shape.")
     # if input_tensor_shapes provided, try to reshape input
     if input_shapes:
-        if len(input_shapes) == 1:
-            single_input = single_input.reshape([-1] + input_shapes[0])  # type: ignore
-            if len(single_input) != len(batch):
-                raise ValueError("Input data does not match expected shape.")
-        else:
+        if len(input_shapes) != 1:
             raise ValueError("Multiple input_tensor_shapes found, but model expected one input")
 
+        single_input = single_input.reshape([-1] + input_shapes[0])  # type: ignore
+        if len(single_input) != len(batch):
+            raise ValueError("Input data does not match expected shape.")
     return single_input
 
 
@@ -313,27 +301,24 @@ def _validate_and_transform_prediction_result(
                     raise ValueError("Unsupported field type in return struct type.")
         else:
             raise ValueError(
-                "Prediction results for StructType must be a dictionary or "
-                "a list of dictionary, got: {}".format(type(preds))
+                f"Prediction results for StructType must be a dictionary or a list of dictionary, got: {type(preds)}"
             )
 
         # check column names
         if set(predNames) != set(fieldNames):
             raise ValueError(
-                "Prediction result columns did not match expected return_type "
-                "columns: expected {}, got: {}".format(fieldNames, predNames)
+                f"Prediction result columns did not match expected return_type columns: expected {fieldNames}, got: {predNames}"
             )
 
         return pd.DataFrame(preds)
     elif isinstance(return_type, ArrayType):
-        if isinstance(preds, np.ndarray):
-            if len(preds) != num_input_rows:
-                raise ValueError("Prediction results must have same length as input data.")
-            if len(preds.shape) != 2:
-                raise ValueError("Prediction results for ArrayType must be two-dimensional.")
-        else:
+        if not isinstance(preds, np.ndarray):
             raise ValueError("Prediction results for ArrayType must be an ndarray.")
 
+        if len(preds) != num_input_rows:
+            raise ValueError("Prediction results must have same length as input data.")
+        if len(preds.shape) != 2:
+            raise ValueError("Prediction results for ArrayType must be two-dimensional.")
         return pd.Series(list(preds))
     elif isinstance(return_type, supported_scalar_types):
         preds_array: np.ndarray = preds  # type: ignore

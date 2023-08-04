@@ -311,8 +311,7 @@ class LogisticRegressionModel(
 
     def _output_columns(self) -> List[Tuple[str, str]]:
         output_cols = [(self.getOrDefault(self.predictionCol), "bigint")]
-        prob_col = self.getOrDefault(self.probabilityCol)
-        if prob_col:
+        if prob_col := self.getOrDefault(self.probabilityCol):
             output_cols += [(prob_col, "array<double>")]
         return output_cols
 

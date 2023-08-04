@@ -86,7 +86,7 @@ class ErrorClassesReader:
         """
         error_classes = error_class.split(".")
         len_error_classes = len(error_classes)
-        assert len_error_classes in (1, 2)
+        assert len_error_classes in {1, 2}
 
         # Generate message template for main error class.
         main_error_class = error_classes[0]
@@ -100,17 +100,14 @@ class ErrorClassesReader:
         has_sub_class = len_error_classes == 2
 
         if not has_sub_class:
-            message_template = main_message_template
+            return main_message_template
+        # Generate message template for sub error class if exists.
+        sub_error_class = error_classes[1]
+        main_error_class_subclass_info_map = main_error_class_info_map["sub_class"]
+        if sub_error_class in main_error_class_subclass_info_map:
+            sub_error_class_info_map = main_error_class_subclass_info_map[sub_error_class]
         else:
-            # Generate message template for sub error class if exists.
-            sub_error_class = error_classes[1]
-            main_error_class_subclass_info_map = main_error_class_info_map["sub_class"]
-            if sub_error_class in main_error_class_subclass_info_map:
-                sub_error_class_info_map = main_error_class_subclass_info_map[sub_error_class]
-            else:
-                raise ValueError(f"Cannot find sub error class '{sub_error_class}'")
+            raise ValueError(f"Cannot find sub error class '{sub_error_class}'")
 
-            sub_message_template = "\n".join(sub_error_class_info_map["message"])
-            message_template = main_message_template + " " + sub_message_template
-
-        return message_template
+        sub_message_template = "\n".join(sub_error_class_info_map["message"])
+        return f"{main_message_template} {sub_message_template}"

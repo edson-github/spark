@@ -65,14 +65,14 @@ class CrossValidatorIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         cvModel = cv.fit(dataset)
         lrModel = cvModel.bestModel
 
-        lrModelPath = temp_path + "/lrModel"
+        lrModelPath = f"{temp_path}/lrModel"
         lrModel.save(lrModelPath)
         loadedLrModel = LogisticRegressionModelCls.load(lrModelPath)
         self.assertEqual(loadedLrModel.uid, lrModel.uid)
         self.assertEqual(loadedLrModel.intercept, lrModel.intercept)
 
         # SPARK-32092: Saving and then loading CrossValidatorModel should not change the params
-        cvModelPath = temp_path + "/cvModel"
+        cvModelPath = f"{temp_path}/cvModel"
         cvModel.save(cvModelPath)
         loadedCvModel = CrossValidatorModel.load(cvModelPath)
         for param in [
@@ -89,7 +89,7 @@ class CrossValidatorIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         # test loading model backwards compatibility
         cvModel2 = cvModel.copy()
         cvModel2.stdMetrics = []
-        cvModelPath2 = temp_path + "/cvModel2"
+        cvModelPath2 = f"{temp_path}/cvModel2"
         cvModel2.save(cvModelPath2)
         loadedCvModel2 = CrossValidatorModel.load(cvModelPath2)
         assert loadedCvModel2.stdMetrics == []
@@ -121,7 +121,7 @@ class CrossValidatorIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         # test save/load of CrossValidator
         cv = CrossValidator(estimator=lr, estimatorParamMaps=grid, evaluator=evaluator)
         cvModel = cv.fit(dataset)
-        cvPath = temp_path + "/cv"
+        cvPath = f"{temp_path}/cv"
         cv.save(cvPath)
         loadedCV = CrossValidator.load(cvPath)
         self.assertEqual(loadedCV.getEstimator().uid, cv.getEstimator().uid)
@@ -129,7 +129,7 @@ class CrossValidatorIOBasicTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         self.assert_param_maps_equal(loadedCV.getEstimatorParamMaps(), cv.getEstimatorParamMaps())
 
         # test save/load of CrossValidatorModel
-        cvModelPath = temp_path + "/cvModel"
+        cvModelPath = f"{temp_path}/cvModel"
         cvModel.save(cvModelPath)
         loadedModel = CrossValidatorModel.load(cvModelPath)
         self.assertEqual(loadedModel.bestModel.uid, cvModel.bestModel.uid)

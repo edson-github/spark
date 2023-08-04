@@ -105,7 +105,7 @@ class TestFunctionPickler(unittest.TestCase):
             os.remove(fname)
 
     def _create_code_snippet_body(self, pickled_fn_path: str, fn_output_save_path: str) -> str:
-        code_snippet = textwrap.dedent(
+        return textwrap.dedent(
             f"""
                     from pyspark import cloudpickle
                     import os
@@ -118,7 +118,6 @@ class TestFunctionPickler(unittest.TestCase):
                             cloudpickle.dump(output, f)
                     """
         )
-        return code_snippet
 
     def _are_two_files_identical(self, fpath1: str, fpath2: str) -> bool:
         with open(fpath1, "rb") as f:

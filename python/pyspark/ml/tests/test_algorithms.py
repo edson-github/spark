@@ -292,9 +292,9 @@ class LDATest(SparkSessionTestCase):
         self.assertFalse(localModel.isDistributed())
         # Define paths
         path = tempfile.mkdtemp()
-        lda_path = path + "/lda"
-        dist_model_path = path + "/distLDAModel"
-        local_model_path = path + "/localLDAModel"
+        lda_path = f"{path}/lda"
+        dist_model_path = f"{path}/distLDAModel"
+        local_model_path = f"{path}/localLDAModel"
         # Test LDA
         lda.save(lda_path)
         lda2 = LDA.load(lda_path)

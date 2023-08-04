@@ -40,8 +40,7 @@ except ImportError:
 
 class DeepspeedTorchDistributorUnitTests(unittest.TestCase):
     def _get_env_var(self, var_name: str, default_value: Any) -> Any:
-        value = os.getenv(var_name)
-        if value:
+        if value := os.getenv(var_name):
             return value
         os.environ[var_name] = str(default_value)
         return default_value
@@ -82,11 +81,11 @@ class DeepspeedTorchDistributorUnitTests(unittest.TestCase):
         deepspeed_conf = "path/to/deepspeed"
         train_file_path = "path/to/exec"
         num_procs = 10
-        input_params: Dict[str, Any] = {}
-        input_params["local_mode"] = True
-        input_params["num_processes"] = num_procs
-        input_params["deepspeed_config"] = deepspeed_conf
-
+        input_params: Dict[str, Any] = {
+            "local_mode": True,
+            "num_processes": num_procs,
+            "deepspeed_config": deepspeed_conf,
+        }
         torchrun_local_args_expected = ["--standalone", "--nnodes=1"]
         with self.subTest(msg="Testing local training with no extra args"):
             local_cmd_no_args_expected = [
@@ -128,10 +127,11 @@ class DeepspeedTorchDistributorUnitTests(unittest.TestCase):
         deepspeed_conf = "path/to/deepspeed"
         train_file_path = "path/to/exec"
         num_procs = 10
-        input_params: Dict[str, Any] = {}
-        input_params["local_mode"] = True
-        input_params["num_processes"] = num_procs
-        input_params["deepspeed_config"] = deepspeed_conf
+        input_params: Dict[str, Any] = {
+            "local_mode": True,
+            "num_processes": num_procs,
+            "deepspeed_config": deepspeed_conf,
+        }
         (
             distributed_master_address,
             distributed_master_port,
@@ -187,7 +187,7 @@ def _create_basic_function() -> Callable:
         import deepspeed
 
         print(deepspeed.__version__)
-        return (leg1 * leg1 + leg2 * leg2) ** 0.5
+        return (leg1**2 + leg2**2)**0.5
 
     return pythagoras
 

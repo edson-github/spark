@@ -57,7 +57,7 @@ class CrossValidatorIONestedTests(SparkSessionTestCase, ValidatorTestUtilsMixin)
         # test save/load of CrossValidator
         cv = CrossValidator(estimator=ova, estimatorParamMaps=grid, evaluator=evaluator)
         cvModel = cv.fit(dataset)
-        cvPath = temp_path + "/cv"
+        cvPath = f"{temp_path}/cv"
         cv.save(cvPath)
         loadedCV = CrossValidator.load(cvPath)
         self.assert_param_maps_equal(loadedCV.getEstimatorParamMaps(), grid)
@@ -74,7 +74,7 @@ class CrossValidatorIONestedTests(SparkSessionTestCase, ValidatorTestUtilsMixin)
                     self.assertEqual(param[p], originalParamMap[i][p])
 
         # test save/load of CrossValidatorModel
-        cvModelPath = temp_path + "/cvModel"
+        cvModelPath = f"{temp_path}/cvModel"
         cvModel.save(cvModelPath)
         loadedModel = CrossValidatorModel.load(cvModelPath)
         self.assert_param_maps_equal(loadedModel.getEstimatorParamMaps(), grid)

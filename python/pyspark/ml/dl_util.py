@@ -64,7 +64,7 @@ class FunctionPickler:
                 cloudpickle.dump((fn, args, kwargs), f)
                 return f.name
 
-        if save_dir == "":
+        if not save_dir:
             save_dir = os.getcwd()
 
         with tempfile.NamedTemporaryFile(dir=save_dir, delete=False) as f:
