@@ -171,7 +171,7 @@ class TorchDistributorBaselineUnitTestsMixin:
             os.environ[key] = value
 
     def delete_env_vars(self, input_map: Dict[str, str]) -> None:
-        for key in input_map.keys():
+        for key in input_map:
             del os.environ[key]
 
     def test_validate_correct_inputs(self) -> None:
@@ -331,7 +331,7 @@ class TorchDistributorLocalUnitTestsMixin:
             os.environ[key] = value
 
     def delete_env_vars(self, input_map: Dict[str, str]) -> None:
-        for key in input_map.keys():
+        for key in input_map:
             del os.environ[key]
 
     def test_get_num_tasks_locally(self) -> None:

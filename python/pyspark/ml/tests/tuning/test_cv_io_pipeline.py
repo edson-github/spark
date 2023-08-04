@@ -74,7 +74,7 @@ class CrossValidatorIOPipelineTests(SparkSessionTestCase, ValidatorTestUtilsMixi
             evaluator=MulticlassClassificationEvaluator(),
             numFolds=2,
         )  # use 3+ folds in practice
-        cvPath = temp_path + "/cv"
+        cvPath = f"{temp_path}/cv"
         crossval.save(cvPath)
         loadedCV = CrossValidator.load(cvPath)
         self.assert_param_maps_equal(loadedCV.getEstimatorParamMaps(), paramGrid)
@@ -84,7 +84,7 @@ class CrossValidatorIOPipelineTests(SparkSessionTestCase, ValidatorTestUtilsMixi
         cvModel = crossval.fit(training)
 
         # test save/load of CrossValidatorModel
-        cvModelPath = temp_path + "/cvModel"
+        cvModelPath = f"{temp_path}/cvModel"
         cvModel.save(cvModelPath)
         loadedModel = CrossValidatorModel.load(cvModelPath)
         self.assertEqual(loadedModel.bestModel.uid, cvModel.bestModel.uid)
@@ -102,7 +102,7 @@ class CrossValidatorIOPipelineTests(SparkSessionTestCase, ValidatorTestUtilsMixi
             evaluator=MulticlassClassificationEvaluator(),
             numFolds=2,
         )  # use 3+ folds in practice
-        cv2Path = temp_path + "/cv2"
+        cv2Path = f"{temp_path}/cv2"
         crossval2.save(cv2Path)
         loadedCV2 = CrossValidator.load(cv2Path)
         self.assert_param_maps_equal(loadedCV2.getEstimatorParamMaps(), paramGrid)
@@ -111,7 +111,7 @@ class CrossValidatorIOPipelineTests(SparkSessionTestCase, ValidatorTestUtilsMixi
         # Run cross-validation, and choose the best set of parameters.
         cvModel2 = crossval2.fit(training)
         # test save/load of CrossValidatorModel
-        cvModelPath2 = temp_path + "/cvModel2"
+        cvModelPath2 = f"{temp_path}/cvModel2"
         cvModel2.save(cvModelPath2)
         loadedModel2 = CrossValidatorModel.load(cvModelPath2)
         self.assertEqual(loadedModel2.bestModel.uid, cvModel2.bestModel.uid)

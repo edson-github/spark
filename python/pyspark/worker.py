@@ -177,7 +177,7 @@ def verify_pandas_result(result, return_type, assign_cols_by_name, truncate_retu
             # if any column name of the result is a string
             # the column names of the result have to match the return type
             #   see create_array in pyspark.sql.pandas.serializers.ArrowStreamPandasSerializer
-            field_names = set([field.name for field in return_type.fields])
+            field_names = {field.name for field in return_type.fields}
             # only the first len(field_names) result columns are considered
             # when truncating the return schema
             result_columns = (
@@ -190,11 +190,9 @@ def verify_pandas_result(result, return_type, assign_cols_by_name, truncate_retu
                 and column_names != field_names
             ):
                 missing = sorted(list(field_names.difference(column_names)))
-                missing = f" Missing: {', '.join(missing)}." if missing else ""
-
                 extra = sorted(list(column_names.difference(field_names)))
                 extra = f" Unexpected: {', '.join(extra)}." if extra else ""
-
+                missing = f" Missing: {', '.join(missing)}." if missing else ""
                 raise PySparkRuntimeError(
                     error_class="RESULT_COLUMNS_MISMATCH_FOR_PANDAS_UDF",
                     message_parameters={
@@ -202,7 +200,6 @@ def verify_pandas_result(result, return_type, assign_cols_by_name, truncate_retu
                         "extra": extra,
                     },
                 )
-            # otherwise the number of columns of result have to match the return type
             elif len(result_columns) != len(return_type):
                 raise PySparkRuntimeError(
                     error_class="RESULT_LENGTH_MISMATCH_FOR_PANDAS_UDF",
@@ -211,12 +208,11 @@ def verify_pandas_result(result, return_type, assign_cols_by_name, truncate_retu
                         "actual": str(len(result.columns)),
                     },
                 )
-    else:
-        if not isinstance(result, pd.Series):
-            raise PySparkTypeError(
-                error_class="UDF_RETURN_TYPE",
-                message_parameters={"expected": "pandas.Series", "actual": type(result).__name__},
-            )
+    elif not isinstance(result, pd.Series):
+        raise PySparkTypeError(
+            error_class="UDF_RETURN_TYPE",
+            message_parameters={"expected": "pandas.Series", "actual": type(result).__name__},
+        )
 
 
 def wrap_arrow_batch_iter_udf(f, return_type):
@@ -469,15 +465,11 @@ def wrap_bounded_window_agg_pandas_udf(f, return_type):
 
 def read_single_udf(pickleSer, infile, eval_type, runner_conf, udf_index):
     num_arg = read_int(infile)
-    arg_offsets = [read_int(infile) for i in range(num_arg)]
+    arg_offsets = [read_int(infile) for _ in range(num_arg)]
     chained_func = None
-    for i in range(read_int(infile)):
+    for _ in range(read_int(infile)):
         f, return_type = read_command(pickleSer, infile)
-        if chained_func is None:
-            chained_func = f
-        else:
-            chained_func = chain(chained_func, f)
-
+        chained_func = f if chained_func is None else chain(chained_func, f)
     if eval_type == PythonEvalType.SQL_SCALAR_PANDAS_ITER_UDF:
         func = chained_func
     else:
@@ -509,7 +501,7 @@ def read_single_udf(pickleSer, infile, eval_type, runner_conf, udf_index):
     elif eval_type == PythonEvalType.SQL_BATCHED_UDF:
         return arg_offsets, wrap_udf(func, return_type)
     else:
-        raise ValueError("Unknown eval type: {}".format(eval_type))
+        raise ValueError(f"Unknown eval type: {eval_type}")
 
 
 # Used by SQL_GROUPED_MAP_PANDAS_UDF and SQL_SCALAR_PANDAS_UDF and SQL_ARROW_BATCHED_UDF when
@@ -559,7 +551,7 @@ def read_udtf(pickleSer, infile, eval_type):
         )
 
     return_type = _parse_datatype_json_string(utf8_deserializer.loads(infile))
-    if not type(return_type) == StructType:
+    if type(return_type) != StructType:
         raise PySparkRuntimeError(
             f"The return type of a UDTF must be a struct type, but got {type(return_type)}."
         )
@@ -761,11 +753,11 @@ def read_udfs(pickleSer, infile, eval_type):
         else:
             # Scalar Pandas UDF handles struct type arguments as pandas DataFrames instead of
             # pandas Series. See SPARK-27240.
-            df_for_struct = (
-                eval_type == PythonEvalType.SQL_SCALAR_PANDAS_UDF
-                or eval_type == PythonEvalType.SQL_SCALAR_PANDAS_ITER_UDF
-                or eval_type == PythonEvalType.SQL_MAP_PANDAS_ITER_UDF
-            )
+            df_for_struct = eval_type in [
+                PythonEvalType.SQL_SCALAR_PANDAS_UDF,
+                PythonEvalType.SQL_SCALAR_PANDAS_ITER_UDF,
+                PythonEvalType.SQL_MAP_PANDAS_ITER_UDF,
+            ]
             # Arrow-optimized Python UDF takes a struct type argument as a Row
             struct_in_pandas = (
                 "row" if eval_type == PythonEvalType.SQL_ARROW_BATCHED_UDF else "dict"
@@ -809,10 +801,7 @@ def read_udfs(pickleSer, infile, eval_type):
 
                 udf_args = [batch[offset] for offset in arg_offsets]
                 num_input_rows += len(udf_args[0])
-                if len(udf_args) == 1:
-                    return udf_args[0]
-                else:
-                    return tuple(udf_args)
+                return udf_args[0] if len(udf_args) == 1 else tuple(udf_args)
 
             iterator = map(map_batch, iterator)
             result_iter = udf(iterator)
@@ -960,10 +949,7 @@ def read_udfs(pickleSer, infile, eval_type):
             result = tuple(f(*[a[o] for o in arg_offsets]) for (arg_offsets, f) in udfs)
             # In the special case of a single UDF this will return a single result rather
             # than a tuple of results; this is the format that the JVM side expects.
-            if len(result) == 1:
-                return result[0]
-            else:
-                return result
+            return result[0] if len(result) == 1 else result
 
     def func(_, it):
         return map(mapper, it)
@@ -1021,7 +1007,7 @@ def main(infile, outfile):
                 addresses.append(utf8_deserializer.loads(infile))
             taskContext._resources[key] = ResourceInformation(name, addresses)
 
-        taskContext._localProperties = dict()
+        taskContext._localProperties = {}
         for i in range(read_int(infile)):
             k = utf8_deserializer.loads(infile)
             v = utf8_deserializer.loads(infile)

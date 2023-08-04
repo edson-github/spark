@@ -184,8 +184,8 @@ class Pipeline(Estimator["PipelineModel"], _PipelineReadWrite):
     def _fit(self, dataset: Union[DataFrame, pd.DataFrame]) -> "PipelineModel":
         stages = self.getStages()
         for stage in stages:
-            if not (isinstance(stage, Estimator) or isinstance(stage, Transformer)):
-                raise TypeError("Cannot recognize a pipeline stage of type %s." % type(stage))
+            if not (isinstance(stage, (Estimator, Transformer))):
+                raise TypeError(f"Cannot recognize a pipeline stage of type {type(stage)}.")
         indexOfLastEstimator = -1
         for i, stage in enumerate(stages):
             if isinstance(stage, Estimator):
@@ -224,7 +224,7 @@ class Pipeline(Estimator["PipelineModel"], _PipelineReadWrite):
             new instance
         """
         if extra is None:
-            extra = dict()
+            extra = {}
         that = Params.copy(self, extra)
         stages = [stage.copy(extra) for stage in that.getStages()]
         return that.setStages(stages)
@@ -257,6 +257,6 @@ class PipelineModel(Model, _PipelineReadWrite):
         :returns: new instance
         """
         if extra is None:
-            extra = dict()
+            extra = {}
         stages = [stage.copy(extra) for stage in self.stages]
         return PipelineModel(stages)

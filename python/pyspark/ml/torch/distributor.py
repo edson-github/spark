@@ -141,8 +141,7 @@ def _get_gpus_owned(context: Union[SparkSession, BarrierTaskContext]) -> List[st
     if CUDA_VISIBLE_DEVICES in os.environ:
         gpu_indices = list(map(int, addresses))
         gpu_list = os.environ[CUDA_VISIBLE_DEVICES].split(",")
-        gpu_owned = [gpu_list[i] for i in gpu_indices]
-        return gpu_owned
+        return [gpu_list[i] for i in gpu_indices]
     return addresses
 
 
@@ -478,20 +477,11 @@ class TorchDistributor(Distributor):
                 tail.append(decoded)
                 if redirect_to_stdout:
                     if (
-                        log_streaming_client
-                        and not log_streaming_client.failed
-                        and (
-                            log_streaming_client.sock.getsockname()[0]
-                            == log_streaming_client.sock.getpeername()[0]
-                        )
+                        not log_streaming_client
+                        or log_streaming_client.failed
+                        or log_streaming_client.sock.getsockname()[0]
+                        != log_streaming_client.sock.getpeername()[0]
                     ):
-                        # If log_streaming_client and log_stream_server are in the same
-                        # node (typical case is spark local mode),
-                        # server side will redirect the log to STDOUT,
-                        # to avoid STDOUT outputs duplication, skip redirecting
-                        # logs to STDOUT in client side.
-                        pass
-                    else:
                         sys.stdout.write(decoded)
                 if log_streaming_client:
                     log_streaming_client.send(decoded.rstrip())
@@ -557,17 +547,14 @@ class TorchDistributor(Distributor):
         """
         if not framework_wrapper:
             raise RuntimeError("`framework_wrapper` is not set. ...")
-        # The object to train is a file path, so framework_wrapper is some
-        # run_training_on_pytorch_file function.
         if type(train_object) is str:
             return framework_wrapper(input_params, train_object, *args, **kwargs)
-        else:
-            # We are doing training with a function, will call run_training_on_pytorch_function
-            if not run_pytorch_file_fn:
-                run_pytorch_file_fn = TorchDistributor._run_training_on_pytorch_file
-            return framework_wrapper(
-                input_params, train_object, run_pytorch_file_fn, *args, **kwargs
-            )
+        # We are doing training with a function, will call run_training_on_pytorch_function
+        if not run_pytorch_file_fn:
+            run_pytorch_file_fn = TorchDistributor._run_training_on_pytorch_file
+        return framework_wrapper(
+            input_params, train_object, run_pytorch_file_fn, *args, **kwargs
+        )
 
     def _run_local_training(
         self,
@@ -604,9 +591,8 @@ class TorchDistributor(Distributor):
         finally:
             if cuda_state_was_set:
                 os.environ[CUDA_VISIBLE_DEVICES] = old_cuda_visible_devices
-            else:
-                if CUDA_VISIBLE_DEVICES in os.environ:
-                    del os.environ[CUDA_VISIBLE_DEVICES]
+            elif CUDA_VISIBLE_DEVICES in os.environ:
+                del os.environ[CUDA_VISIBLE_DEVICES]
 
         return output
 
@@ -973,15 +959,24 @@ class TorchDistributor(Distributor):
             framework_wrapper_fn = run_pytorch_file_fn
         else:
             framework_wrapper_fn = TorchDistributor._run_training_on_pytorch_function
-        if self.local_mode:
-            output = self._run_local_training(
-                framework_wrapper_fn, train_object, run_pytorch_file_fn, *args, **kwargs
+        return (
+            self._run_local_training(
+                framework_wrapper_fn,
+                train_object,
+                run_pytorch_file_fn,
+                *args,
+                **kwargs
             )
-        else:
-            output = self._run_distributed_training(
-                framework_wrapper_fn, train_object, run_pytorch_file_fn, None, *args, **kwargs
+            if self.local_mode
+            else self._run_distributed_training(
+                framework_wrapper_fn,
+                train_object,
+                run_pytorch_file_fn,
+                None,
+                *args,
+                **kwargs
             )
-        return output
+        )
 
     def _train_on_dataframe(
         self,

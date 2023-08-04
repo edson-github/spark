@@ -93,21 +93,17 @@ class ParamsReadWrite(Params):
         skipped_params = self._get_skip_saving_params()
 
         uid = self.uid
-        cls = self.__module__ + "." + self.__class__.__name__
+        cls = f"{self.__module__}.{self.__class__.__name__}"
 
         # User-supplied param values
         params = self._paramMap
-        json_params = {}
         skipped_params = skipped_params or []
-        for p in params:
-            if p.name not in skipped_params:
-                json_params[p.name] = params[p]
-
-        # Default param values
-        json_default_params = {}
-        for p in self._defaultParamMap:
-            json_default_params[p.name] = self._defaultParamMap[p]
-
+        json_params = {
+            p.name: params[p] for p in params if p.name not in skipped_params
+        }
+        json_default_params = {
+            p.name: self._defaultParamMap[p] for p in self._defaultParamMap
+        }
         metadata = {
             "class": cls,
             "timestamp": int(round(time.time() * 1000)),
@@ -141,14 +137,13 @@ class ParamsReadWrite(Params):
         .. versionadded:: 3.5.0
         """
         if os.path.exists(path):
-            if overwrite:
-                if os.path.isdir(path):
-                    shutil.rmtree(path)
-                else:
-                    os.remove(path)
-            else:
+            if not overwrite:
                 raise ValueError(f"The path {path} already exists.")
 
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
         os.makedirs(path)
         self._save_to_local(path)
 

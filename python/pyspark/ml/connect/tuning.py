@@ -421,7 +421,7 @@ class CrossValidator(
         numModels = len(epm)
         eva = self.getOrDefault(self.evaluator)
         nFolds = self.getOrDefault(self.numFolds)
-        metrics_all = [[0.0] * numModels for i in range(nFolds)]
+        metrics_all = [[0.0] * numModels for _ in range(nFolds)]
 
         pool = ThreadPool(processes=min(self.getParallelism(), numModels))
 
@@ -442,10 +442,7 @@ class CrossValidator(
 
         metrics, std_metrics = CrossValidator._gen_avg_and_std_metrics(metrics_all)
 
-        if eva.isLargerBetter():
-            bestIndex = np.argmax(metrics)
-        else:
-            bestIndex = np.argmin(metrics)
+        bestIndex = np.argmax(metrics) if eva.isLargerBetter() else np.argmin(metrics)
         bestModel = cast(Model, est.fit(dataset, epm[bestIndex]))
         cv_model = self._copyValues(
             CrossValidatorModel(
@@ -480,7 +477,7 @@ class CrossValidator(
             def checker(foldNum: int) -> bool:
                 if foldNum < 0 or foldNum >= nFolds:
                     raise ValueError(
-                        "Fold number must be in range [0, %s), but got %s." % (nFolds, foldNum)
+                        f"Fold number must be in range [0, {nFolds}), but got {foldNum}."
                     )
                 return True
 
@@ -491,9 +488,9 @@ class CrossValidator(
                     checker_udf(dataset[foldCol]) & (col(foldCol) == lit(i))
                 )
                 if training.rdd.getNumPartitions() == 0 or len(training.take(1)) == 0:
-                    raise ValueError("The training data at fold %s is empty." % i)
+                    raise ValueError(f"The training data at fold {i} is empty.")
                 if validation.rdd.getNumPartitions() == 0 or len(validation.take(1)) == 0:
-                    raise ValueError("The validation data at fold %s is empty." % i)
+                    raise ValueError(f"The validation data at fold {i} is empty.")
                 datasets.append((training, validation))
 
         return datasets
@@ -518,7 +515,7 @@ class CrossValidator(
             Copy of this instance
         """
         if extra is None:
-            extra = dict()
+            extra = {}
         newCV = Params.copy(self, extra)
         if self.isSet(self.estimator):
             newCV.setEstimator(self.getEstimator().copy(extra))
@@ -577,7 +574,7 @@ class CrossValidatorModel(Model, _CrossValidatorParams, _CrossValidatorReadWrite
             Copy of this instance
         """
         if extra is None:
-            extra = dict()
+            extra = {}
         bestModel = self.bestModel.copy(extra)
         avgMetrics = list(self.avgMetrics)
         stdMetrics = list(self.stdMetrics)

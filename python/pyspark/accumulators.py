@@ -47,14 +47,12 @@ def _deserialize_accumulator(
 ) -> "Accumulator[T]":
     from pyspark.accumulators import _accumulatorRegistry
 
-    # If this certain accumulator was deserialized, don't overwrite it.
     if aid in _accumulatorRegistry:
         return _accumulatorRegistry[aid]
-    else:
-        accum = Accumulator(aid, zero_value, accum_param)
-        accum._deserialized = True
-        _accumulatorRegistry[aid] = accum
-        return accum
+    accum = Accumulator(aid, zero_value, accum_param)
+    accum._deserialized = True
+    _accumulatorRegistry[aid] = accum
+    return accum
 
 
 class Accumulator(Generic[T]):

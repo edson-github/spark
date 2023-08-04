@@ -268,15 +268,15 @@ class CrossValidatorTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         checkSubModels(cvModel.subModels)
 
         # Test the default value for option "persistSubModel" to be "true"
-        testSubPath = temp_path + "/testCrossValidatorSubModels"
-        savingPathWithSubModels = testSubPath + "cvModel3"
+        testSubPath = f"{temp_path}/testCrossValidatorSubModels"
+        savingPathWithSubModels = f"{testSubPath}cvModel3"
         cvModel.save(savingPathWithSubModels)
         cvModel3 = CrossValidatorModel.load(savingPathWithSubModels)
         checkSubModels(cvModel3.subModels)
         cvModel4 = cvModel3.copy()
         checkSubModels(cvModel4.subModels)
 
-        savingPathWithoutSubModels = testSubPath + "cvModel2"
+        savingPathWithoutSubModels = f"{testSubPath}cvModel2"
         cvModel.write().option("persistSubModels", "false").save(savingPathWithoutSubModels)
         cvModel2 = CrossValidatorModel.load(savingPathWithoutSubModels)
         self.assertEqual(cvModel2.subModels, None)
@@ -329,7 +329,7 @@ class CrossValidatorTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
 
         # test save/load of CrossValidator
         temp_path = tempfile.mkdtemp()
-        cvPath = temp_path + "/cv"
+        cvPath = f"{temp_path}/cv"
         cv_with_user_folds.save(cvPath)
         loadedCV = CrossValidator.load(cvPath)
         self.assertEqual(loadedCV.getFoldCol(), cv_with_user_folds.getFoldCol())
@@ -462,15 +462,15 @@ class TrainValidationSplitTests(SparkSessionTestCase, ValidatorTestUtilsMixin):
         self.assertEqual(len(tvsModel.subModels), len(grid))
 
         # Test the default value for option "persistSubModel" to be "true"
-        testSubPath = temp_path + "/testTrainValidationSplitSubModels"
-        savingPathWithSubModels = testSubPath + "cvModel3"
+        testSubPath = f"{temp_path}/testTrainValidationSplitSubModels"
+        savingPathWithSubModels = f"{testSubPath}cvModel3"
         tvsModel.save(savingPathWithSubModels)
         tvsModel3 = TrainValidationSplitModel.load(savingPathWithSubModels)
         self.assertEqual(len(tvsModel3.subModels), len(grid))
         tvsModel4 = tvsModel3.copy()
         self.assertEqual(len(tvsModel4.subModels), len(grid))
 
-        savingPathWithoutSubModels = testSubPath + "cvModel2"
+        savingPathWithoutSubModels = f"{testSubPath}cvModel2"
         tvsModel.write().option("persistSubModels", "false").save(savingPathWithoutSubModels)
         tvsModel2 = TrainValidationSplitModel.load(savingPathWithoutSubModels)
         self.assertEqual(tvsModel2.subModels, None)

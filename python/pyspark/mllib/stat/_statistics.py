@@ -305,9 +305,9 @@ class Statistics:
 
         if isinstance(observed, Matrix):
             jmodel = callMLlibFunc("chiSqTest", observed)
+        elif expected and len(expected) != len(observed):
+            raise ValueError("`expected` should have same length with `observed`")
         else:
-            if expected and len(expected) != len(observed):
-                raise ValueError("`expected` should have same length with `observed`")
             jmodel = callMLlibFunc("chiSqTest", _convert_to_vector(observed), expected)
         return ChiSqTestResult(jmodel)
 
@@ -374,9 +374,9 @@ class Statistics:
         0.175
         """
         if not isinstance(data, RDD):
-            raise TypeError("data should be an RDD, got %s." % type(data))
+            raise TypeError(f"data should be an RDD, got {type(data)}.")
         if not isinstance(distName, str):
-            raise TypeError("distName should be a string, got %s." % type(distName))
+            raise TypeError(f"distName should be a string, got {type(distName)}.")
 
         param_list = [float(param) for param in params]
         return KolmogorovSmirnovTestResult(

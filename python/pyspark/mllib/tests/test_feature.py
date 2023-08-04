@@ -113,7 +113,7 @@ class HashingTFTest(MLlibTestCase):
                 output[i],
                 expected[i],
                 14,
-                "Error at " + str(i) + ": expected " + str(expected[i]) + ", got " + str(output[i]),
+                f"Error at {str(i)}: expected {str(expected[i])}, got {str(output[i])}",
             )
 
 

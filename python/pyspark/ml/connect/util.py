@@ -78,10 +78,7 @@ def aggregate_dataframe(
             else:
                 state = merge_agg_state(state, new_batch_state)
 
-        if state is None:
-            pickled_state = None
-        else:
-            pickled_state = cloudpickle.dumps(state)
+        pickled_state = None if state is None else cloudpickle.dumps(state)
         yield pd.DataFrame({"state": [pickled_state]})
 
     result_pdf = dataframe.mapInPandas(compute_state, schema="state binary").toPandas()
@@ -152,7 +149,7 @@ def transform_dataframe_column(
             assert len(output_cols) == 1
             result_data = pd.DataFrame({output_col_name: result_data})
         else:
-            assert set(result_data.columns) == set(col_name for col_name, _ in output_cols)
+            assert set(result_data.columns) == {col_name for col_name, _ in output_cols}
             result_data = result_data
 
         for col_name in result_data.columns:

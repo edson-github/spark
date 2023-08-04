@@ -46,8 +46,7 @@ class WriteLogToStdout(socketserver.StreamRequestHandler):
                 time.sleep(_SERVER_POLL_INTERVAL)
                 continue
             number_bytes = unpack(">i", packed_number_bytes)[0]
-            message = self.rfile.read(number_bytes)
-            yield message
+            yield self.rfile.read(number_bytes)
 
     def handle(self) -> None:
         self.request.setblocking(0)  # non-blocking mode
@@ -102,11 +101,10 @@ class LogStreamingServer:
 class LogStreamingClientBase:
     @staticmethod
     def _maybe_truncate_msg(message: str) -> str:
-        if len(message) > _TRUNCATE_MSG_LEN:
-            message = message[:_TRUNCATE_MSG_LEN]
-            return message + "...(truncated)"
-        else:
+        if len(message) <= _TRUNCATE_MSG_LEN:
             return message
+        message = message[:_TRUNCATE_MSG_LEN]
+        return f"{message}...(truncated)"
 
     def send(self, message: str) -> None:
         pass
